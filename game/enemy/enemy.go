@@ -14,7 +14,7 @@ embedded_components {
   ""
 }
 embedded_components {
-  id: "collisionobject"
+  id: "co"
   type: "collisionobject"
   data: "type: COLLISION_OBJECT_TYPE_KINEMATIC\n"
   "mass: 0.0\n"
@@ -22,6 +22,7 @@ embedded_components {
   "restitution: 0.5\n"
   "group: \"enemies\"\n"
   "mask: \"player\"\n"
+  "mask: \"radar\"\n"
   "mask: \"player_bullet\"\n"
   "embedded_collision_shape {\n"
   "  shapes {\n"

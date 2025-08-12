@@ -4,7 +4,7 @@ local PLAYER = hash("player")
 local PLAYER_BULLLET = hash("player_bullet")
 local WALL = hash("wall")
 
-go.property("speed", 100)
+go.property("speed", 300)
 
 local UP = vmath.vector3(0, 1, 0)
 local RAD_180 = math.pi
@@ -81,7 +81,7 @@ function update(self, dt)
 
 	-- Корректируем угол, чтобы избегать ближайшего врага
 	if nearby then
-		local avoidance_factor = (150 / nearby_distance) -- Фактор избегания
+		local avoidance_factor = (15 / nearby_distance) -- Фактор избегания
 		local avoidance_angle = (target_angle - nearby_angle) * avoidance_factor
 		target_angle = target_angle + clamp(avoidance_angle, -RAD_180, RAD_180)
 	end
@@ -123,6 +123,7 @@ function on_message(self, message_id, message, sender)
 			end
 		end
 		if message.group == PLAYER_BULLLET then
+			print("касавап")
 			go.delete()
 		end
 	elseif message_id == CONTACT_POINT_RESPONSE then

@@ -14,7 +14,7 @@ embedded_components {
   ""
 }
 embedded_components {
-  id: "collisionobject"
+  id: "co"
   type: "collisionobject"
   data: "type: COLLISION_OBJECT_TYPE_KINEMATIC\n"
   "mass: 0.0\n"
@@ -35,6 +35,29 @@ embedded_components {
   "  data: 12.05059\n"
   "  data: 12.074853\n"
   "  data: 10.0\n"
+  "}\n"
+  ""
+}
+embedded_components {
+  id: "co_radar"
+  type: "collisionobject"
+  data: "type: COLLISION_OBJECT_TYPE_TRIGGER\n"
+  "mass: 0.0\n"
+  "friction: 0.1\n"
+  "restitution: 0.5\n"
+  "group: \"radar\"\n"
+  "mask: \"enemies\"\n"
+  "embedded_collision_shape {\n"
+  "  shapes {\n"
+  "    shape_type: TYPE_SPHERE\n"
+  "    position {\n"
+  "    }\n"
+  "    rotation {\n"
+  "    }\n"
+  "    index: 0\n"
+  "    count: 1\n"
+  "  }\n"
+  "  data: 206.0862\n"
   "}\n"
   ""
 }

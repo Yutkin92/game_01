@@ -1,12 +1,12 @@
-go.property("speed", 400) -- Скорость пули
+go.property("speed", 100) -- Скорость пули
 go.property("dir", vmath.vector3(0, 0, 0)) -- Направление пули (по умолчанию 0, 0, 0)
 
 -- Инициализация пули
 function init(self)
-	-- self.dir = go.get(".", "dir") -- Получаем направление из свойств
 	print("Bullet initialized: Position=" .. tostring(go.get_position()) .. ", Direction=" .. tostring(self.dir))
 	if vmath.length(self.dir) < 0.1 then
-		print("Warning: Bullet direction is near zero, may not move!")
+		print("Warning: Bullet direction is near zero, setting default direction")
+		self.dir = vmath.vector3(0, 1, 0) -- Устанавливаем направление по умолчанию (вверх)
 	end
 end
 
@@ -17,7 +17,6 @@ function update(self, dt)
 	go.set_position(pos)
 	print("Bullet moved: Position=" .. tostring(pos) .. ", Direction=" .. tostring(self.dir))
 
-	-- Удаляем пулю, если она вышла за пределы игрового поля (1280x720)
 	if pos.x < 0 or pos.x > 1280 or pos.y < 0 or pos.y > 720 then
 		go.delete()
 		print("Bullet deleted: Out of bounds at " .. tostring(pos))
