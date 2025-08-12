@@ -1,45 +1,64 @@
+local COLLISION_RESPONSE = hash("collision_response")
+local TRIGGER_RESPONSE = hash("trigger_response")
+local ENEMIES = hash("enemies")
+
+-- Инициализация игрока
 function init(self)
-	msg.post(".", "acquire_input_focus")
-
-	self.moving = false
-	self.input = vmath.vector3()
-	self.dir = vmath.vector3(0, 1, 0)
-	self.speed = 300
-
-	self.current_animation = "idle"
-	self.firing = false
+	msg.post(".", "acquire_input_focus") -- Захватываем ввод
+	self.moving = false -- Флаг движения
+	self.input = vmath.vector3() -- Вектор ввода
+	self.dir = vmath.vector3(0, 1, 0) -- Направление движения (по умолчанию вверх)
+	self.speed = 300 -- Скорость движения
+	self.current_animation = "idle" -- Текущая анимация
+	self.target_id = nil -- ID ближайшего врага
+	self.enemies_in_range = {} -- Список врагов в радиусе триггера
+	self.fire_cooldown = 0 -- Таймер перезарядки стрельбы
+	self.fire_interval = 0.5 -- Интервал между выстрелами (в секундах)
+	self.fire_range = 600 -- Радиус стрельбы
+	print("Player initialized: fire_range=" .. self.fire_range .. ", fire_interval=" .. self.fire_interval)
+	print("Player position: " .. tostring(go.get_position()))
 end
 
-function final(self)                               
-	msg.post(".", "release_input_focus")           
+-- Очистка при уничтожении объекта
+function final(self)
+	msg.post(".", "release_input_focus")
 end
 
+-- Вычисление расстояния до другого объекта
+local function distance_to(id)
+	local my_pos = go.get_position()
+	local other_pos = go.get_position(id)
+	return vmath.length(my_pos - other_pos)
+end
+
+-- Вычисление угла к другому объекту
+local function angle_to(id)
+	local my_pos = go.get_position()
+	local other_pos = go.get_position(id)
+	return math.atan2(other_pos.y - my_pos.y, other_pos.x - my_pos.x)
+end
+
+-- Обновление состояния игрока
 function update(self, dt)
+	-- Обновляем таймер перезарядки
+	self.fire_cooldown = math.max(0, self.fire_cooldown - dt)
 
-	-- код перемещения
+	-- Перемещение игрока
 	if self.moving then
 		local pos = go.get_position()
 		pos = pos + self.dir * self.speed * dt
-		go.set_position(pos) 
+		go.set_position(pos)
 	end
 
-	-- код стрельбы
-	if self.firing then
-		local pos = go.get_position("player1")
-		local angle = math.atan2(self.dir.y, self.dir.x)
-		local rot = vmath.quat_rotation_z(angle)
-		factory.create("#rocketfactory", pos, rot, { dir = self.dir })
-	end
 
+	-- Сбрасываем ввод
 	self.input.x = 0
 	self.input.y = 0
 	self.moving = false
-	self.firing = false
 end
 
-
+-- Обработка ввода
 function on_input(self, action_id, action)
-
 	if action_id == hash("up") then
 		self.input.y = 1
 	elseif action_id == hash("down") then
@@ -51,8 +70,32 @@ function on_input(self, action_id, action)
 	end
 
 	if vmath.length(self.input) > 0 then
-		self.moving = true                          -- [16]
-		self.dir = vmath.normalize(self.input)      -- [17]
-
+		self.moving = true
+		self.dir = vmath.normalize(self.input)
+	end
+	if action_id == hash("fire") and action.pressed then
+		local my_pos = go.get_position()
+		local fire_dir = self.dir
+		local angle = math.atan2(fire_dir.y, fire_dir.x)
+		local rot = vmath.quat_rotation_z(angle)
+		local bullet_id = factory.create("/arena#bulletsfactory", my_pos, rot, { dir = fire_dir })
+		print("Test bullet spawned: ID=" .. tostring(bullet_id))
 	end
 end
+
+-- Обработка сообщений
+function on_message(self, message_id, message, sender)
+	if message_id == COLLISION_RESPONSE and message.group == ENEMIES then
+		go.delete()
+		print("Player deleted due to collision with enemy")
+	elseif message_id == TRIGGER_RESPONSE and message.group == ENEMIES then
+		if message.enter then
+			self.enemies_in_range[message.other_id] = true
+			print("Enemy entered range: ID=" .. tostring(message.other_id) .. ", Position=" .. tostring(go.get_position(message.other_id)))
+		else
+			self.enemies_in_range[message.other_id] = nil
+			print("Enemy left range: ID=" .. tostring(message.other_id))
+		end
+	end
+end
+
