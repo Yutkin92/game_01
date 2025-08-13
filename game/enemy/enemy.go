@@ -24,6 +24,7 @@ embedded_components {
   "mask: \"player\"\n"
   "mask: \"radar\"\n"
   "mask: \"player_bullet\"\n"
+  "mask: \"ground\"\n"
   "embedded_collision_shape {\n"
   "  shapes {\n"
   "    shape_type: TYPE_BOX\n"

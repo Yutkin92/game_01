@@ -139,4 +139,7 @@ function on_message(self, message_id, message, sender)
 			print("Enemy left range: ID=" .. tostring(message.other_id))
 		end
 	end
+	if message_id == hash("contact_point_response") then
+		go.set_position(go.get_position() + message.normal * message.distance)
+	end	
 end
