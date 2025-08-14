@@ -1,50 +1,138 @@
-function init(self)
-	-- Add initialization code here
-	-- Learn more: https://defold.com/manuals/script/
-	-- Remove this function if not needed
+local COLLISION_RESPONSE = hash("collision_response")
+local CONTACT_POINT_RESPONSE = hash("contact_point_response")
+local PLAYER = hash("player")
+local PLAYER_BULLLET = hash("player_bullet")
+local WALL = hash("wall")
+
+go.property("speed", 300)
+
+local UP = vmath.vector3(0, 1, 0)
+local RAD_180 = math.pi
+
+
+local function random_position_on_wall()
+	local wall = math.random(1, 4)
+	if wall == 1 then
+		return vmath.vector3(0, math.random(0, 720), 0)
+	elseif wall == 2 then
+		return vmath.vector3(1156, math.random(0, 720), 0)
+	elseif wall == 3 then
+		return vmath.vector3(math.random(0, 1280), 0, 0)
+	else
+		return vmath.vector3(math.random(0, 1280), 720, 0)
+	end
 end
 
-function final(self)
-	-- Add finalization code here
-	-- Learn more: https://defold.com/manuals/script/
-	-- Remove this function if not needed
+local function clamp(v, min, max)
+	return math.max(min, math.min(max, v))
+end
+
+-- Получить угол до другого игрового объекта
+local function angle_to(id)
+	local my_pos = go.get_position()
+	local other_pos = go.get_position(id)
+	return -math.atan2(other_pos.x - my_pos.x, other_pos.y - my_pos.y)
+end
+
+-- Получить расстояние до другого игрового объекта
+local function distance_to(id)
+	local my_pos = go.get_position()
+	local other_pos = go.get_position(id)
+	return vmath.length(my_pos - other_pos)
+end
+
+function init(self)
+	-- Список ближайших врагов
+	self.nearby = {}
+	-- Инициализируем без игрока
+	self.player_found = false
+	self.target_id = nil
 end
 
 function update(self, dt)
-	-- Add update code here
-	-- Learn more: https://defold.com/manuals/script/
-	-- Remove this function if not needed
-end
+	local pos = go.get_position()
+	local target_angle
 
-function fixed_update(self, dt)
-	-- This function is called if 'Fixed Update Frequency' is enabled in the Engine section of game.project
-	-- Can be coupled with fixed updates of the physics simulation if 'Use Fixed Timestep' is enabled in
-	-- Physics section of game.project
-	-- Add update code here
-	-- Learn more: https://defold.com/manuals/script/
-	-- Remove this function if not needed
+	-- Проверяем, существует ли игрок
+	if self.target_id and go.exists(self.target_id) then
+		target_angle = angle_to(self.target_id) -- Получаем угол к игроку
+		self.player_found = true
+	else
+		-- Если игрок не найден, поворачиваемся в случайном направлении
+		self.player_found = false
+		target_angle = math.rad(math.random(0, 360))
+	end
+
+	-- Находим ближайшего другого врага
+	local nearby = nil
+	local nearby_distance = nil
+	local nearby_angle = target_angle
+	for nearby_id, _ in pairs(self.nearby) do
+		if go.exists(nearby_id) then
+			local d = distance_to(nearby_id)
+			local a = angle_to(nearby_id)
+			if not nearby or d < nearby_distance then
+				nearby = nearby_id
+				nearby_distance = d
+				nearby_angle = a
+			end
+		end
+	end
+
+	-- Корректируем угол, чтобы избегать ближайшего врага
+	if nearby then
+		local avoidance_factor = (15 / nearby_distance) -- Фактор избегания
+		local avoidance_angle = (target_angle - nearby_angle) * avoidance_factor
+		target_angle = target_angle + clamp(avoidance_angle, -RAD_180, RAD_180)
+	end
+
+	-- Поворачиваем к целевому углу
+	local current_rotation = go.get_rotation()
+	local target_rotation = vmath.quat_rotation_z(target_angle)
+	local rotation_speed = 4 -- Скорость поворота
+	local rotation = vmath.slerp(rotation_speed * dt, current_rotation, target_rotation)
+	go.set_rotation(rotation)
+
+	-- Двигаемся в текущем направлении
+	local direction = vmath.rotate(rotation, UP)
+	local distance = self.speed * dt
+	go.set_position(pos + direction * distance)
 end
 
 function on_message(self, message_id, message, sender)
-	-- Add message-handling code here
-	-- Learn more: https://defold.com/manuals/message-passing/
-	-- Remove this function if not needed
-end
-
-function on_input(self, action_id, action)
-	-- Add input-handling code here. The game object this script is attached to
-	-- must have acquired input focus:
-	--
-	--    msg.post(".", "acquire_input_focus")
-	--
-	-- All mapped input bindings will be received. Mouse and touch input will
-	-- be received regardless of where on the screen it happened.
-	-- Learn more: https://defold.com/manuals/input/
-	-- Remove this function if not needed
-end
-
-function on_reload(self)
-	-- Add reload-handling code here
-	-- Learn more: https://defold.com/manuals/hot-reload/
-	-- Remove this function if not needed
+	if message_id == hash("trigger_response") then
+		if message.enter then
+			self.nearby[message.other_id] = true
+		else
+			self.nearby[message.other_id] = false
+		end
+	elseif message_id == hash("set_player") then
+		-- Получаем ID игрока из сообщения
+		self.target_id = message.player_id
+		self.player_found = go.exists(self.target_id)
+	end
+	if message_id == COLLISION_RESPONSE then
+		if message.group == PLAYER then
+			local my_pos = go.get_world_position()
+			local other_pos = go.get_world_position(message.other_id)
+			local distance_to_target = vmath.length(my_pos - self.target_position)
+			local distance_to_collision = vmath.length(my_pos - other_pos)
+			if distance_to_collision < distance_to_target or not self.target_id then
+				self.target_position = other_pos
+				self.target_id = message.other_id
+			end
+		end
+		if message.group == PLAYER_BULLLET then
+			print("касавап")
+			go.delete()
+		end
+	elseif message_id == CONTACT_POINT_RESPONSE then
+		if message.group == WALL then
+			go.set_position(go.get_position() + message.normal * message.distance)
+			self.target_position = random_position_on_wall()
+		end
+	end
+	if message_id == hash("contact_point_response") then
+		go.set_position(go.get_position() + message.normal * message.distance)
+	end	
 end

@@ -1,17 +1,21 @@
 components {
-  id: "enemy"
-  component: "/game/enemy/enemy.script"
+  id: "bullet"
+  component: "/game/bullets/bullet.script"
 }
 embedded_components {
   id: "sprite"
   type: "sprite"
-  data: "default_animation: \"red\"\n"
+  data: "default_animation: \"blue\"\n"
   "material: \"/builtins/materials/sprite.material\"\n"
   "textures {\n"
   "  sampler: \"texture_sampler\"\n"
   "  texture: \"/main/main.atlas\"\n"
   "}\n"
   ""
+  scale {
+    x: 0.5
+    y: 0.5
+  }
 }
 embedded_components {
   id: "co"
@@ -20,10 +24,8 @@ embedded_components {
   "mass: 0.0\n"
   "friction: 0.1\n"
   "restitution: 0.5\n"
-  "group: \"enemies\"\n"
-  "mask: \"player\"\n"
-  "mask: \"radar\"\n"
-  "mask: \"player_bullet\"\n"
+  "group: \"player_bullet\"\n"
+  "mask: \"enemies\"\n"
   "mask: \"ground\"\n"
   "embedded_collision_shape {\n"
   "  shapes {\n"
@@ -35,8 +37,8 @@ embedded_components {
   "    index: 0\n"
   "    count: 3\n"
   "  }\n"
-  "  data: 11.966139\n"
-  "  data: 11.870824\n"
+  "  data: 0.113658\n"
+  "  data: 0.1190605\n"
   "  data: 10.0\n"
   "}\n"
   ""
