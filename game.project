@@ -1,5 +1,6 @@
 [bootstrap]
 main_collection = /main/main.collectionc
+render = /builtins/render/default.renderc
 
 [script]
 shared_state = 1
@@ -17,6 +18,7 @@ scale_mode = stretch
 
 [project]
 title = Viking
+dependencies#0 = https://url.to/library
 
 [graphics]
 default_texture_mag_filter = nearest
